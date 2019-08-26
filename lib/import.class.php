@@ -33,7 +33,7 @@ class Import
      * 
      * @throws ImportException
      */
-    function initFile($filename, $separator = ";",  $headerLine = 6 )
+    function initFile($filename, $separator = ";",  $headerLine = 8 )
     {
         if ($separator == "tab" || $separator == "t") {
             $separator = "\t";
@@ -47,7 +47,7 @@ class Import
             /**
              * Positionnement après la ligne d'entete
              */
-            for($i = 0; $i < $headerLine; $i++) {
+            for($i = 1; $i < $headerLine; $i++) {
                 $data = $this->readLine();
             }
             /**

@@ -89,19 +89,20 @@ if (!$eot) {
      */
     try {
         $pdo = connect($param["general"]["dsn"], $param["general"]["user"], $param["general"]["password"], $param["general"]["schema"]);
-        $measure = new Measure($pdo, $ObjetBDDParam);
+        $measure = new Measure($pdo);
         /**
          * Creation of fields
          */
-        $fieldnames = array("measure_id", "station", "temperature", "turbidity_ntu", "salinity_mgl", "oxygen_mgl");
+        $fieldnames = array( "station", "temperature", "turbidity_ntu", "salinity_mgl", "oxygen_mgl");
         $fields = array("measure_id" => $param["fields"]["measure_id"], "date" => $param["fields"]["date"]);
         $colonnes = array(
-            [$fields["measure_id"]] => array("type" => 1, "requis" => 1, "key" => 1),
+            $fields["measure_id"] => array("type" => 1, "requis" => 1, "key" => 1),
             $fields["date"] => array("type" => 3, "requis" => 1)
         );
+
         foreach ($fieldnames as $field) {
             if (isset($param["fields"][$field])) {
-                $colonnes[] = $param["fields"][$field] = array("type" => 1);
+                $colonnes[ $param["fields"][$field] ] = array("type" => 1);
                 $fields[$field] = $param["fields"][$field];
             }
         }
@@ -127,7 +128,7 @@ if (!$eot) {
                  * Extraction de l'extension
                  */
                 $extension = (false === $pos = strrpos($filename, '.')) ? '' : strtolower(substr($filename, $pos + 1));
-                if ($extension == $param["general"]["filetype"] && substr($filename, 0, $radicalLength) == $param["file"]["radical"]) {
+                if ($extension == $param["file"]["filetype"] && substr($filename, 0, $radicalLength) == $param["file"]["radical"]) {
                     $files[] = $filename;
                 }
             }
