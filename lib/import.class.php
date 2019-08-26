@@ -1,7 +1,6 @@
 <?php
 class ImportException extends Exception
-{
-}
+{ }
 
 /**
  * Classe de gestion des imports csv
@@ -33,7 +32,7 @@ class Import
      * 
      * @throws ImportException
      */
-    function initFile($filename, $separator = ";",  $headerLine = 8 )
+    function initFile($filename, $separator = ";")
     {
         if ($separator == "tab" || $separator == "t") {
             $separator = "\t";
@@ -47,21 +46,60 @@ class Import
             /**
              * Positionnement après la ligne d'entete
              */
-            for($i = 1; $i < $headerLine; $i++) {
+            for ($i = 1; $i < $headerLine; $i++) {
                 $data = $this->readLine();
             }
             /**
              * Recuperation de l'ensemble des donnees
              */
-            while(false !== ($data = $this->readLine())){
+            while (false !== ($data = $this->readLine())) {
                 $fileContent[] = $data;
             }
             $this->fileClose();
             return $fileContent;
         } else {
-            throw new ImportException($filename ." non trouvé ou non lisible",$filename);
+            throw new ImportException($filename . " non trouvé ou non lisible", $filename);
         }
     }
+
+    /**
+     * Generate the structure of the file by reading the first lines
+     * The lines beginning with V give the structure
+     *
+     * @param integer $headerLine: first line to be reading to get the structure
+     * @return array
+     */
+    function getStructure($headerLine = 2)
+    {
+        $firstChar = "V";
+        /**
+         * Positionnement après la ligne d'entete
+         */
+        for ($i = 1; $i < $headerLine; $i++) {
+            fgets($this->handle);
+        }
+        $eot = false;
+        $structure = array();
+        while (!eot) {
+            $row = fgets($this->handle);
+            if (substr($row[0], 0, 1) == $firstChar) {
+                $fields = explode(",",$row);
+                $radical = strtolower(substr($fields[1], 0, 4));
+                if (in_array($radical, array("temp", "sali", "turb","oxyg", "fluo", "cond"))) {
+                    /**
+                     * Get the position of the field
+                     */
+                    $col1 = explode(":",$fields[0]);
+                    $structure[$radical.$fields[2]] = $col1[1];
+                }
+            }
+        }
+        rewind($this->handle);
+        return $structure;
+    }
+
+    function getContent()
+    { }
 
     /**
      * Read a line
@@ -88,7 +126,7 @@ class Import
         $nb = count($this->header);
         while (($line = $this->readLine()) !== false) {
             $dl = array();
-            for ($i = 0; $i < $nb; $i ++) {
+            for ($i = 0; $i < $nb; $i++) {
                 $dl[$this->header[$i]] = $line[$i];
             }
             $data[] = $dl;
