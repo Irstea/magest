@@ -46,6 +46,7 @@ if ($argv[1] == "-h" || $argv[1] == "--help") {
     $message->set('--headerSeparator="," : séparateur utilisé dans les lignes d\'entête pour décrire les champs');
     $message->set("--unitFieldNumber=2 : numéro du champ (de 0 à x) où se trouve l'unité de mesure");
     $message->set("--noMove=1 : pas de déplacement des fichiers une fois traités");
+    $message->set("--mode=debug : affiche les paramètres analysés pour le premier fichier et le tableau des données pour le premier enregistrement, et s'arrête");
     $message->set("Les fichiers à traiter doivent être déposés dans le dossier import");
     $message->set("Une fois traités, les fichiers sont déplacés dans le dossier treated");
     $eot = true;
@@ -157,9 +158,13 @@ if (!$eot) {
                  * Get the structure of the file
                  */
                 $structure = $import->getStructure(2, $param["general"]["headerSeparator"], $param["general"]["unitFieldNumber"]);
+                if ($param["general"]["mode"] == "debug") {
+                    printr($structure);
+                }
                 $data = $import->getContent($structure["numline"]);
                 $import->fileClose();
                 $pdo->beginTransaction();
+                $numline = $structure["numline"];
                 foreach ($data as $row) {
                     $newitem = array(
                         $param["table"]["measure_id"] => 0,
@@ -169,7 +174,9 @@ if (!$eot) {
                      * Extract all data from the current row
                      */
                     foreach ($structure["fields"] as $fieldname => $fieldnumber) {
-                        $newitem[$param["fields"][$fieldname]] = $row[$fieldnumber];
+                        if ($row[$fieldnumber] >= 0) {
+                            $newitem[$param["fields"][$fieldname]] = $row[$fieldnumber];
+                        }
                     }
                     /**
                      * Reformate the date
@@ -184,10 +191,15 @@ if (!$eot) {
                         . substr($ldate, 6, 2) . ":"
                         . substr($ldate, 8, 2) . ":"
                         . substr($ldate, 10, 2);
+                    if ($param["general"]["mode"] == "debug") {
+                        printr($newitem);
+                        die;
+                    }
                     /**
                      * Write data in table
                      */
                     $measure->ecrire($newitem);
+                    $numline++;
                 }
                 /**
                  * Deplacement du fichier
@@ -200,6 +212,7 @@ if (!$eot) {
             } catch (Exception $e) {
                 $pdo->rollBack();
                 $message->set("Echec d'importation des fichiers");
+                $message->set("Ligne potentiellement en erreur : " . $numline);
                 $message->set($e->getMessage());
             }
         }
