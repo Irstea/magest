@@ -95,7 +95,7 @@ if (!$eot) {
      * Connexion à la base de données et initialisation de la table
      */
     try {
-        $pdo = connect($param["general"]["dsn"], $param["general"]["user"], $param["general"]["password"], $param["general"]["schema"]);
+        $pdo = connect($param["general"]["dsn"], $param["general"]["login"], $param["general"]["password"], $param["general"]["schema"]);
         $measure = new Measure($pdo);
         /**
          * Prepare the structure of the table
