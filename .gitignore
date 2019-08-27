@@ -1,5 +1,4 @@
-/lib/param.ini
 /param.ini
 /import/sambat*
-/treated/*
-/import/*
+/treated/*.txt
+/import/*.txt

@@ -1,0 +1,307 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8x]{inputenc}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[colorlinks=false,urlbordercolor=white,linkbordercolor=white]{hyperref}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=3cm]{geometry}
+\usepackage{fancyhdr}
+\usepackage{lmodern}
+\usepackage{listings}
+\pagestyle{fancy}
+\usepackage{titlesec}
+\usepackage[abs]{overpic}
+\usepackage{tabularx}
+\usepackage{times}
+% gestion de la police sans-serif (helvetica, équivalent arial) :
+% décommenter les deux lignes suivantes
+%\usepackage{helvet}
+%\renewcommand{\familydefault}{\sfdefault}
+
+% Definition de l'affichage du code
+\lstset{breaklines=true
+,basicstyle=\footnotesize\ttfamily
+,frame=none
+, numbers=none
+%,backgroundcolor=\color{lightgray}
+}
+
+% Definition des couleurs
+\definecolor{titreColor}{RGB}{0,58,128}  % Marine
+\definecolor{stitreColor}{RGB}{0,158,224}  % Ocean
+\definecolor{auteurColor}{RGB}{0,58,128}     % Marine
+\definecolor{texteColor}{RGB}{164,196,0}     % Prairie
+
+% Definition du sommaire
+\usepackage[tight]{shorttoc}
+\newcommand{\sommaire}{\shorttoc{Sommaire}{2}}
+
+% Definition des chapitres
+\titleformat{\section}
+{\color{titreColor}\normalfont\Large\bfseries\sffamily}
+{\color{titreColor}\thesection}{1em}{}
+
+\titleformat{\subsection}
+{\color{stitreColor}\bfseries\sffamily}
+{\color{stitreColor}\thesubsection}{1em}{}
+
+%Données de titre et d'auteur pour la page de garde
+\newcommand{\titre}{Magest -- Importation des mesures}
+\newcommand{\sousTitre}{Utilitaire d'extraction des données de sonde dans une base de données}
+\newcommand{\auteur}{Éric Quinton}
+\newcommand{\dateModif}{\today}
+
+\begin{document}
+%Supprime les veuves et orphelines
+\widowpenalty=10000
+\clubpenalty=10000
+\raggedbottom 
+
+%entete
+\fancyhead{}
+\renewcommand{\headrulewidth}{0pt}
+%pied de page
+\fancyfoot{}
+\fancyfoot[C]{\sffamily\thepage}
+\fancyfoot[L]{\textcolor{titreColor}{\sffamily\textbf{IRSTEA} - Centre de Bordeaux\\}
+\fancyfoot[R]{\textcolor{auteurColor}{\sffamily\auteur{}}\\{\sffamily\dateModif{}}}
+\textcolor{stitreColor}{\sffamily 50, avenue de Verdun, Gazinet\\
+33612 CESTAS Cedex }}
+\fancyfoot[R]{\sffamily\author{}}
+
+% Insertion du logo, du titre et du sous-titre
+\begin{minipage}{0.2\linewidth}
+\includegraphics[width=3.06cm,height=9.57cm,keepaspectratio]{logo_irstea}%
+\end{minipage}
+\hspace{0.1cm}
+\begin{minipage}{0.8\linewidth}
+\LARGE\flushleft \color{titreColor}{\bfseries\sffamily\titre{}}\\
+\large\flushleft \color{stitreColor}{\bfseries\sffamily\sousTitre{}}
+\end{minipage}
+
+% Insertion du sommaire
+% \sommaire
+%\tableofcontents
+
+% Debut effectif du texte
+\section{Présentation}
+
+Le logiciel Magest permet d'importer les fichiers générés par les sondes du réseau Magest dans une base de données. Le programme a été écrit pour fonctionner avec une base de données PostgreSQL, mais il devrait pouvoir être facilement adapté à MySQL.
+
+\section{Installation de PHP}
+Le logiciel fonctionne en ligne de commande, et utilise PHP comme interpréteur.
+
+\subsection{Installation Linux}
+Installez PHP avec la commande :
+\begin{lstlisting}
+sudo apt install php7.2-cli php7.2-mbstring php7.2-pgsql
+\end{lstlisting}
+
+Vérifiez, dans le fichier de configuration (/etc/php/7.2/cli/php.ini), que le composant \textit{mbstring} est bien activé :
+\begin{lstlisting}
+extension=mbstring
+\end{lstlisting}
+
+
+\subsection{Installation Windows}
+Téléchargez la version PHP \textit{Non Thread Safe} depuis le site de PHP : \href{https://windows.php.net/download/}{https://windows.php.net/download/}.
+
+\section{Installation du code}
+Téléchargez le code depuis Github : \href{https://github.com/Irstea/magest/archive/master.zip}{https://github.com/Irstea/magest/archive/master.zip}
+
+Décompressez l'archive dans votre arborescence. Renommez le dossier \textit{magest-master} en \textit{magest}.
+
+Renommez le fichier \textit{param-dist.ini} en \textit{param.ini}.
+
+S'ils n'existent pas, créez les dossiers \textit{magest/import} et \textit{magest/treated}, qui seront utilisés pour déposer les fichiers à traiter ou traités.
+
+\subsection{Tester l'installation}
+
+Linux :
+\begin{itemize}
+\item ouvrez un terminal, et positionnez-vous dans le dossier \textit{magest}
+\item lancez la commande :
+\begin{lstlisting}
+php magest.php -h
+\end{lstlisting}
+pour afficher le message d'aide.
+\end{itemize}
+
+Windows 10 :
+\begin{itemize}
+\item Ouvrez un terminal \textit{PowerShell} (dans le menu, \textit{Windows PowerShell > Windows PowerShell}). Si \textit{Windows PowerShell} n'est pas installé (ce qui est possible), installez-le depuis le centre de gestion des logiciels de Windows.
+\item Positionnez vous dans le sous-dossier \textit{magest} :
+\begin{lstlisting}
+cd .\Documents\magest
+\end{lstlisting}
+\item lancez la commande :
+\begin{lstlisting}
+../php/php.exe magest.php -h
+\end{lstlisting}
+pour afficher le message d'aide.
+\end{itemize}
+. 
+
+\section{Paramétrage}
+Les paramètres utilisés pour faire fonctionner le script sont décrits dans le fichier \textit{param.ini}.
+
+Attention : avec une machine Windows, le fichier ne doit être édité qu'avec Notepad++ (\url{https://notepad-plus-plus.org}), en raison de l'encodage des fins de lignes qui ne sont pas identiques entre Linux et Windows.
+
+Les paramètres sont organisés par section :
+
+\subsection{general}
+L'ensemble des paramètres de cette section peuvent être modifiés en ligne de commande.
+
+% \usepackage{array} is required
+\begin{tabular}{|l|>{\raggedright\arraybackslash}p{12cm}|}
+\hline 
+attribut & Signification \\ 
+\hline 
+source & dossier contenant les fichiers à traiter  \\ 
+treated & dossier où les dossiers traités sont déplacés en fin de traitement \\ 
+dsn & paramètres de connexion à la base de données, en suivant les prescriptions de PHP PDO (\textit{cf.} \href{https://www.php.net/manual/fr/pdo.construct.php}{https://www.php.net/manual/fr/pdo.construct.php}) \\ 
+schema &  Nom du schéma contenant la table à alimenter\\ 
+login & Nom du compte utilisé pour se connecter à la base de données \\ 
+password & Mot de passe associé au login \\ 
+separator & Séparateur de champ utilisé dans les données \\ 
+headerSeparator & Séparateur de champ utilisé dans la partie d'entête des fichiers, pour décrire les colonnes présentes dans le fichier\\ 
+unitFieldNumber & Dans la partie d'entête décrivant les colonnes, indique le numéro de la colonne où l'unité de mesure est décrite (numérotation à partir de 0) \\ 
+filetype & extension des fichiers contenant les données \\
+radical & première partie du nom des fichiers à traiter \\
+\hline 
+\end{tabular} 
+
+\subsection{table}
+
+Cette section permet de décrire la table qui recevra les mesures extraites des fichiers.
+
+\begin{tabular}{|l|>{\raggedright\arraybackslash}p{12cm}|}
+\hline 
+attribut & Signification \\ 
+\hline 
+table & Nom de la table qui recevra les données \\
+measure\_id & Nom de la colonne qui sert d'identifiant à la table. Elle doit être de type numérique\\
+station & Nom de la colonne qui reçoit le numéro informatique de la station (valeur numérique)\\
+date & Nom de la colonne contenant la date, sous forme \textit{timestamp}\\
+datefield & Numéro de la colonne, dans les fichiers de sonde, qui correspond à la date. Ce numéro ne doit pas être modifié \\
+\hline 
+\end{tabular} 
+
+\subsection{stations}
+
+Cette section décrit les stations qui sont gérées. Pour chaque station, on retrouve un numéro associé à un libellé, par exemple :
+\begin{lstlisting}
+bordeaux=2
+\end{lstlisting}
+
+
+Dans ce cas, les mesures concernant la station de Bordeaux seront stockées avec l'identifiant de station n° 2.
+
+\subsection{fields}
+Cette section permet de faire la correspondance entre les informations présentes dans les fichiers de sonde et les colonnes de la table. La première partie est construite en extrayant les 4 premiers caractères du champ à traiter, à laquelle est associée l'unité de mesure.
+
+Par exemple, la ligne suivante, dans l'entête d'un fichier :
+\begin{lstlisting}
+V:3,Turbidite,NTU
+\end{lstlisting}
+
+sera référencée en \textit{TurbNTU}. À cette valeur est associée le nom de la colonne utilisée dans la table pour stocker l'information correspondante.
+
+\section{Exécution}
+\subsection{Dépôt des fichiers}
+Déposez les fichiers à traiter dans le dossier \textit{import}
+
+\subsection{Lancement du script}
+
+Linux :
+\begin{itemize}
+\item ouvrez un terminal, et positionnez-vous dans le dossier \textit{sonde}
+\item la commande de lancement du script est sous la forme :
+\begin{lstlisting}
+php magest.php --options
+\end{lstlisting}
+\end{itemize}
+
+Windows :
+\begin{itemize}
+\item Ouvrez un terminal \textit{PowerShell} (dans le menu, \textit{Windows PowerShell > Windows PowerShell})
+\item Positionnez vous dans le sous-dossier \textit{magest} :
+\begin{lstlisting}
+cd .\Documents\magest
+\end{lstlisting}
+\item la commande de lancement du script est sous la forme (le chemin d'accès à \textit{php.exe} doit être adapté à la situation réelle) :
+\begin{lstlisting}
+../php/php.exe magest.php --options
+\end{lstlisting}
+\end{itemize}
+
+\subsection{Options utilisables}
+
+Plusieurs options peuvent être ajoutées à la ligne de commande. Elles vont surcharger les paramètres généraux du fichier \textit{param.ini}. Une seule est obligatoire : le nom de la station à traiter.
+
+\begin{tabular}{|l|>{\raggedright\arraybackslash}p{12cm}|}
+\hline 
+Paramètre & Fonction \\ 
+\hline 
+station & nom de la station. Le nom est obligatoire, et doit être référencé dans la section $\left[ stations \right]$  du fichier de paramètres \\
+dsn & Chaîne de connexion au serveur de base de données\\
+login & Login utilisé \\
+password & Mot de passe associé \\
+schema & Nom du schéma contenant les données dans la base de données \\
+source & Nom du dossier contenant les fichiers à traiter \\
+treated & Nom du dossier où les fichiers seront déplacés après traitement \\
+param & permet de charger un fichier autre que le fichier param.ini pour utiliser des paramètres spécifiques \\
+filetype & extension des fichiers à traiter \\
+radical & racine des fichiers à traiter (début du nom des fichiers)\\
+separator & séparateur utilisé pour séparer les colonnes dans la partie données. Peuvent être utilisés : ; , space, tab \\
+headerSeparator & séparateur utilisé dans l'entête des fichiers pour décrire les colonnes. Les mêmes séparateurs que précédemment peuvent être utilisés \\
+unitFieldNumber & Dans la partie d'entête, indique le numéro du champ contenant l'unité de mesure (numérotation commençant à 0)\\
+noMove & Si vaut 1, les fichiers traités ne seront pas déplacés. À n'utiliser qu'en phase de test ou de mise au point \\
+mode & Si vaut \textit{debug}, le programme affiche les paramètres lus dans l'entête, ainsi que le tableau d'alimentation de la première ligne de données, puis s'arrête. Cela permet de vérifier que le fichier peut être correctement traité par le programme \\
+help & Le programme affiche un message récapitulant les options, puis s'arrête \\
+\hline
+\end{tabular}
+
+\subsection{Quelques conseils pour l'importation}
+
+Le programme traite chaque fichier indépendamment :
+\begin{itemize}
+\item les paramètres des colonnes sont régénérés à chaque fichier;
+\item si un problème survient, aucune ligne du fichier n'est importée (fonction \textit{rollback} de la base de données). De plus, le numéro de la ligne qui a déclenché le problème est affiché à l'écran ;
+\item une fois traité, le fichier est déplacé dans le dossier \textit{treated} pour éviter qu'il ne soit rejoué.
+\end{itemize}
+
+Avant de lancer l'importation d'un nouveau fichier ou d'un nouveau lot, vérifiez systématiquement que la structure est correctement lue, en utilisant l'option \textit{$--$mode=debug}.
+
+\subsection{Quelques exemples de lignes de commande}
+Test du fichier \textit{Pauillac-2017-database.txt} :
+\begin{lstlisting}
+php magest.php --station=pauillac --separator=tab --radical=Pauillac --headerSeparator=tab --unitFieldNumber=2 --noMove=1 --mode=debug
+\end{lstlisting}
+Importation du même fichier :
+\begin{lstlisting}
+php magest.php --station=pauillac --separator=tab --radical=Pauillac --headerSeparator=tab --unitFieldNumber=2
+\end{lstlisting}
+Importation de tous les fichiers de Pauillac :
+\begin{lstlisting}
+php magest.php --station=pauillac
+\end{lstlisting}
+Importation du fichier \textit{Le-Verdon-2017-database.txt} :
+\begin{lstlisting}
+php magest.php --station=leverdon --separator=tab --radical=Le --headerSeparator=tab --unitFieldNumber=2
+\end{lstlisting}
+Importation du fichier \textit{Bordeaux-2017-database.txt} :
+\begin{lstlisting}
+php magest.php --station=bordeaux --separator=tab --radical=Bordeaux --headerSeparator=tab --unitFieldNumber=3
+\end{lstlisting}
+
+\section{Copyright et assistance}
+Le logiciel est sous Copyright © IRSTEA 2019. Il est distribué sous licence MIT.
+
+Pour toute question ou suggestion, merci d'ouvrir un ticket dans la forge Github : \href{https://github.com/Irstea/magest/issues/new}{https://github.com/Irstea/magest/issues/new}
+\end{document}
