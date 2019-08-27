@@ -42,7 +42,9 @@ if ($argv[1] == "-h" || $argv[1] == "--help") {
     $message->set("--param=param.ini : nom du fichier de paramètres (ne pas modifier sans bonne raison)");
     $message->set("--filetype=txt : extension des fichiers à traiter");
     $message->set("--radical=sambat : radical du nom des fichiers à traiter");
-    $message->set('--separator=space : séparateur de champ (, ; \t ou space)');
+    $message->set('--separator=space : séparateur de champ (, ; tab ou space)');
+    $message->set('--headerSeparator="," : séparateur utilisé dans les lignes d\'entête pour décrire les champs');
+    $message->set("--unitFieldNumber=2 : numéro du champ (de 0 à x) où se trouve l'unité de mesure");
     $message->set("--noMove=1 : pas de déplacement des fichiers une fois traités");
     $message->set("Les fichiers à traiter doivent être déposés dans le dossier import");
     $message->set("Une fois traités, les fichiers sont déplacés dans le dossier treated");
@@ -100,10 +102,10 @@ if (!$eot) {
         $colonnes = array(
             $param["table"]["measure_id"] => array("type" => 1, "requis" => 1, "key" => 1),
             $param["table"]["date"] => array("type" => 3, "requis" => 1),
-            $param["table"]["station"] => array ("type"=>1)
+            $param["table"]["station"] => array("type" => 1)
         );
         foreach ($param["fields"] as $field) {
-            $colonnes[$field] = array("type"=>1);
+            $colonnes[$field] = array("type" => 1);
         }
         /**
          * Init table content
@@ -154,7 +156,7 @@ if (!$eot) {
                 /**
                  * Get the structure of the file
                  */
-                $structure = $import->getStructure(2);
+                $structure = $import->getStructure(2, $param["general"]["headerSeparator"], $param["general"]["unitFieldNumber"]);
                 $data = $import->getContent($structure["numline"]);
                 $import->fileClose();
                 $pdo->beginTransaction();

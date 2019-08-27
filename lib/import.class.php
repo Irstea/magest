@@ -34,13 +34,7 @@ class Import
      */
     function initFile($filename, $separator = ";")
     {
-        if ($separator == "tab" || $separator == "t") {
-            $separator = "\t";
-        }
-        if ($separator == "space") {
-            $separator = " ";
-        }
-        $this->separator = $separator;
+        $this->separator = $this->normalizeSeparator($separator);
         /*
          * File open
          */
@@ -50,16 +44,33 @@ class Import
     }
 
     /**
+     * Normalize the separator
+     *
+     * @param string $separator
+     * @return string
+     */
+    private function normalizeSeparator($separator) {
+        if ($separator == "tab" || $separator == "t") {
+            $separator = "\t";
+        }
+        if ($separator == "space") {
+            $separator = " ";
+        }
+        return $separator;
+    }
+
+    /**
      * Generate the structure of the file by reading the first lines
      * The lines beginning with V give the structure
      *
      * @param integer $headerLine: first line to be reading to get the structure
      * @return array: fields: list of positions of values, numline: number of the first line with data
      */
-    function getStructure($firstLine = 2)
+    function getStructure($firstLine = 2, $separator=",", $unitFieldNumber=2)
     {
         $firstChar = "V";
         $numline = 1;
+        $separator = $this->normalizeSeparator($separator);
         /**
          * Positionnement après la ligne d'entete
          */
@@ -73,13 +84,13 @@ class Import
             $row = fgets($this->handle);
             $numline++;
             if (substr($row[0], 0, 1) == $firstChar) {
-                $fields = explode(",", $row);
+                $fields = explode($separator, $row);
                 $radical = substr($fields[1], 0, 4);
                 if (in_array($radical, array("Temp", "Sali", "Turb", "Oxyg", "Fluo", "Cond"))) {
                     /**
                      * Extract the unit and remove end of line
                      */
-                    $unit = str_replace("\r",'', utf8_encode($fields[2]));
+                    $unit = str_replace("\r",'', utf8_encode($fields[$unitFieldNumber]));
                     $unit = str_replace("\n", '', $unit);
 
                     /**
