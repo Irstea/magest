@@ -37,27 +37,14 @@ class Import
         if ($separator == "tab" || $separator == "t") {
             $separator = "\t";
         }
+        if ($separator == "space") {
+            $separator = " ";
+        }
         $this->separator = $separator;
         /*
          * File open
          */
-        if ($this->handle = fopen($filename, 'r')) {
-            $fileContent = array();
-            /**
-             * Positionnement après la ligne d'entete
-             */
-            for ($i = 1; $i < $headerLine; $i++) {
-                $data = $this->readLine();
-            }
-            /**
-             * Recuperation de l'ensemble des donnees
-             */
-            while (false !== ($data = $this->readLine())) {
-                $fileContent[] = $data;
-            }
-            $this->fileClose();
-            return $fileContent;
-        } else {
+        if (!$this->handle = fopen($filename, 'r')) {
             throw new ImportException($filename . " non trouvé ou non lisible", $filename);
         }
     }
@@ -67,39 +54,79 @@ class Import
      * The lines beginning with V give the structure
      *
      * @param integer $headerLine: first line to be reading to get the structure
-     * @return array
+     * @return array: fields: list of positions of values, numline: number of the first line with data
      */
-    function getStructure($headerLine = 2)
+    function getStructure($firstLine = 2)
     {
         $firstChar = "V";
+        $numline = 1;
         /**
          * Positionnement après la ligne d'entete
          */
-        for ($i = 1; $i < $headerLine; $i++) {
+        for ($i = 1; $i < $firstLine; $i++) {
             fgets($this->handle);
+            $numline++;
         }
         $eot = false;
         $structure = array();
-        while (!eot) {
+        while (!$eot) {
             $row = fgets($this->handle);
+            $numline++;
             if (substr($row[0], 0, 1) == $firstChar) {
-                $fields = explode(",",$row);
-                $radical = strtolower(substr($fields[1], 0, 4));
-                if (in_array($radical, array("temp", "sali", "turb","oxyg", "fluo", "cond"))) {
+                $fields = explode(",", $row);
+                $radical = substr($fields[1], 0, 4);
+                if (in_array($radical, array("Temp", "Sali", "Turb", "Oxyg", "Fluo", "Cond"))) {
+                    /**
+                     * Extract the unit and remove end of line
+                     */
+                    $unit = str_replace("\r",'', utf8_encode($fields[2]));
+                    $unit = str_replace("\n", '', $unit);
+
                     /**
                      * Get the position of the field
                      */
-                    $col1 = explode(":",$fields[0]);
-                    $structure[$radical.$fields[2]] = $col1[1];
+                    $col1 = explode(":", $fields[0]);
+                    $structure["fields"][$radical . $unit] = $col1[1] + 1;
                 }
+            } else {
+                $eot = true;
             }
         }
+        /**
+         * Rewind the file at the beginning
+         */
         rewind($this->handle);
+        /**
+         * set the first line of data
+         */
+        $structure["numline"] = $numline - 1;
         return $structure;
     }
-
-    function getContent()
-    { }
+    /**
+     * Get the content of data of the file
+     *
+     * @param int $firstLine: first line where data are
+     * @return array
+     */
+    function getContent($firstLine)
+    {
+        if (!$this->handle) {
+            throw new ImportException("Le fichier n'a pas été ouvert en lecture");
+        }
+        /**
+         * Positionnement après la ligne d'entete
+         */
+        for ($i = 1; $i < $firstLine; $i++) {
+            $this->readLine();
+        }
+        /**
+         * Recuperation de l'ensemble des donnees
+         */
+        while (false !== ($data = $this->readLine())) {
+            $fileContent[] = $data;
+        }
+        return $fileContent;
+    }
 
     /**
      * Read a line

@@ -40,7 +40,9 @@ if ($argv[1] == "-h" || $argv[1] == "--help") {
     $message->set("--source=source : nom du dossier contenant les fichiers source");
     $message->set("--treated=treated : nom du dossier où les fichiers sont déplacés après traitement");
     $message->set("--param=param.ini : nom du fichier de paramètres (ne pas modifier sans bonne raison)");
-    $message->set("--filetype=csv : extension des fichiers à traiter");
+    $message->set("--filetype=txt : extension des fichiers à traiter");
+    $message->set("--radical=sambat : radical du nom des fichiers à traiter");
+    $message->set('--separator=space : séparateur de champ (, ; \t ou space)');
     $message->set("--noMove=1 : pas de déplacement des fichiers une fois traités");
     $message->set("Les fichiers à traiter doivent être déposés dans le dossier import");
     $message->set("Une fois traités, les fichiers sont déplacés dans le dossier treated");
@@ -72,7 +74,9 @@ if (!$eot) {
         foreach ($params as $key => $value) {
             $param["general"][substr($key, 2)] = $value;
         }
-
+        /**
+         * Recuperation de la station
+         */
         if (strlen($param["general"]["station"]) > 0) {
             if (!isset($param["stations"][$param["general"]["station"]])) {
                 $message->set("La station n'existe pas dans le fichier param.ini: " . $param["general"]["station"]);
@@ -91,22 +95,20 @@ if (!$eot) {
         $pdo = connect($param["general"]["dsn"], $param["general"]["user"], $param["general"]["password"], $param["general"]["schema"]);
         $measure = new Measure($pdo);
         /**
-         * Creation of fields
+         * Prepare the structure of the table
          */
-        $fieldnames = array( "station", "temperature", "turbidity_ntu", "salinity_mgl", "oxygen_mgl");
-        $fields = array("measure_id" => $param["fields"]["measure_id"], "date" => $param["fields"]["date"]);
         $colonnes = array(
-            $fields["measure_id"] => array("type" => 1, "requis" => 1, "key" => 1),
-            $fields["date"] => array("type" => 3, "requis" => 1)
+            $param["table"]["measure_id"] => array("type" => 1, "requis" => 1, "key" => 1),
+            $param["table"]["date"] => array("type" => 3, "requis" => 1),
+            $param["table"]["station"] => array ("type"=>1)
         );
-
-        foreach ($fieldnames as $field) {
-            if (isset($param["fields"][$field])) {
-                $colonnes[ $param["fields"][$field] ] = array("type" => 1);
-                $fields[$field] = $param["fields"][$field];
-            }
+        foreach ($param["fields"] as $field) {
+            $colonnes[$field] = array("type"=>1);
         }
-        $measure->init($param["fields"]["table"], $colonnes);
+        /**
+         * Init table content
+         */
+        $measure->init($param["table"]["table"], $colonnes);
     } catch (Exception $e) {
         $message->set("Erreur de connexion à la base de données :");
         $message->set($e->getMessage());
@@ -122,13 +124,13 @@ if (!$eot) {
         $folder = opendir($param["general"]["source"]);
         if ($folder) {
             $filesOnly = array();
-            $radicalLength = strlen($param["file"]["radical"]);
+            $radicalLength = strlen($param["general"]["radical"]);
             while (false !== ($filename = readdir($folder))) {
                 /**
                  * Extraction de l'extension
                  */
                 $extension = (false === $pos = strrpos($filename, '.')) ? '' : strtolower(substr($filename, $pos + 1));
-                if ($extension == $param["file"]["filetype"] && substr($filename, 0, $radicalLength) == $param["file"]["radical"]) {
+                if ($extension == $param["general"]["filetype"] && substr($filename, 0, $radicalLength) == $param["general"]["radical"]) {
                     $files[] = $filename;
                 }
             }
@@ -148,27 +150,33 @@ if (!$eot) {
 
         foreach ($files as $file) {
             try {
-                $data = $import->initFile($param["general"]["source"] . "/" . $file, $param["file"]["separator"], $param["file"]["firstLine"]);
+                $import->initFile($param["general"]["source"] . "/" . $file, $param["general"]["separator"]);
+                /**
+                 * Get the structure of the file
+                 */
+                $structure = $import->getStructure(2);
+                $data = $import->getContent($structure["numline"]);
+                $import->fileClose();
                 $pdo->beginTransaction();
                 foreach ($data as $row) {
                     $newitem = array(
-                        $fields["measure_id"] => 0,
-                        $fields["station"] => $param["stations"][$param["general"]["station"]]
+                        $param["table"]["measure_id"] => 0,
+                        $param["table"]["station"] => $param["stations"][$param["general"]["station"]]
                     );
                     /**
                      * Extract all data from the current row
                      */
-                    foreach (array("date", "temperature", "turbidity_ntu", "salinity_mgl", "oxygen_mgl") as $field) {
-                        $newitem[$fields[$field]] = $row[$param["file"][$field]];
+                    foreach ($structure["fields"] as $fieldname => $fieldnumber) {
+                        $newitem[$param["fields"][$fieldname]] = $row[$fieldnumber];
                     }
                     /**
                      * Reformate the date
                      */
-                    $ldate = $newitem[$fields["date"]];
+                    $ldate = $row[$param["table"]["datefield"]];
                     if (strlen($ldate) == 11) {
                         $ldate = "0" . $ldate;
                     }
-                    $newitem[$fields["date"]] = substr($ldate, 0, 2) . "/"
+                    $newitem[$param["table"]["date"]] = substr($ldate, 0, 2) . "/"
                         . substr($ldate, 2, 2) . "/20"
                         . substr($ldate, 4, 2) . " "
                         . substr($ldate, 6, 2) . ":"
