@@ -84,6 +84,12 @@ class Import
             $row = fgets($this->handle);
             $numline++;
             if (substr($row[0], 0, 1) == $firstChar) {
+                /**
+                 * Extract the first field if separator is not a tab
+                 */
+                if ($separator != "\t") {
+                    $row = explode("\t",$row)[0];
+                }
                 $fields = explode($separator, $row);
                 $radical = substr($fields[1], 0, 4);
                 if (in_array($radical, array("Temp", "Sali", "Turb", "Oxyg", "Fluo", "Cond"))) {

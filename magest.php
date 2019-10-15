@@ -159,46 +159,54 @@ if (!$eot) {
                  */
                 $structure = $import->getStructure(2, $param["general"]["headerSeparator"], $param["general"]["unitFieldNumber"]);
                 if ($param["general"]["mode"] == "debug") {
+                    echo "Structure:" . PHP_EOL;
                     printr($structure);
+                    echo "param[fields]:" . PHP_EOL;
+                    printr($param["fields"]);
                 }
                 $data = $import->getContent($structure["numline"]);
                 $import->fileClose();
                 $pdo->beginTransaction();
                 $numline = $structure["numline"];
                 foreach ($data as $row) {
-                    $newitem = array(
-                        $param["table"]["measure_id"] => 0,
-                        $param["table"]["station"] => $param["stations"][$param["general"]["station"]]
-                    );
-                    /**
-                     * Extract all data from the current row
-                     */
-                    foreach ($structure["fields"] as $fieldname => $fieldnumber) {
-                        if ($row[$fieldnumber] >= 0) {
-                            $newitem[$param["fields"][$fieldname]] = $row[$fieldnumber];
+                    if (strlen($row[0]) > 0) {
+                        $newitem = array(
+                            $param["table"]["measure_id"] => 0,
+                            $param["table"]["station"] => $param["stations"][$param["general"]["station"]]
+                        );
+                        /**
+                         * Extract all data from the current row
+                         */
+                        foreach ($structure["fields"] as $fieldname => $fieldnumber) {
+                            if ($row[$fieldnumber] >= 0) {
+                                $newitem[$param["fields"][$fieldname]] = $row[$fieldnumber];
+                            }
                         }
+                        /**
+                         * Reformate the date
+                         */
+                        $ldate = $row[$param["table"]["datefield"]];
+                        if (strlen($ldate) == 11) {
+                            $ldate = "0" . $ldate;
+                        }
+                        $newitem[$param["table"]["date"]] = substr($ldate, 0, 2) . "/"
+                            . substr($ldate, 2, 2) . "/20"
+                            . substr($ldate, 4, 2) . " "
+                            . substr($ldate, 6, 2) . ":"
+                            . substr($ldate, 8, 2) . ":"
+                            . substr($ldate, 10, 2);
+                        if ($param["general"]["mode"] == "debug") {
+                            echo "Data in file:" . PHP_EOL;
+                            printr($row);
+                            echo "Data ready to import:" . PHP_EOL;
+                            printr($newitem);
+                            die;
+                        }
+                        /**
+                         * Write data in table
+                         */
+                        $measure->ecrire($newitem);
                     }
-                    /**
-                     * Reformate the date
-                     */
-                    $ldate = $row[$param["table"]["datefield"]];
-                    if (strlen($ldate) == 11) {
-                        $ldate = "0" . $ldate;
-                    }
-                    $newitem[$param["table"]["date"]] = substr($ldate, 0, 2) . "/"
-                        . substr($ldate, 2, 2) . "/20"
-                        . substr($ldate, 4, 2) . " "
-                        . substr($ldate, 6, 2) . ":"
-                        . substr($ldate, 8, 2) . ":"
-                        . substr($ldate, 10, 2);
-                    if ($param["general"]["mode"] == "debug") {
-                        printr($newitem);
-                        die;
-                    }
-                    /**
-                     * Write data in table
-                     */
-                    $measure->ecrire($newitem);
                     $numline++;
                 }
                 /**
