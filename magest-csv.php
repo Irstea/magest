@@ -1,7 +1,6 @@
 <?php
 
 /**
- * 
  * Realisation : Eric Quinton - mai 2019
  * Copyright © Irstea 2019
  */
@@ -43,10 +42,11 @@ if ($argv[1] == "-h" || $argv[1] == "--help") {
     $message->set("--filetype=txt : extension des fichiers à traiter");
     $message->set("--radical=sambat : radical du nom des fichiers à traiter");
     $message->set('--separator=space : séparateur de champ (, ; tab ou space)');
-    $message->set('--headerSeparator="," : séparateur utilisé dans les lignes d\'entête pour décrire les champs');
-    $message->set("--unitFieldNumber=2 : numéro du champ (de 0 à x) où se trouve l'unité de mesure");
+    $message->set("--headerLine=1 : n° de la ligne d'entête");
+    $message->set("--numline=2 : première ligne à traiter");
     $message->set("--noMove=1 : pas de déplacement des fichiers une fois traités");
     $message->set("--mode=debug : affiche les paramètres analysés pour le premier fichier et le tableau des données pour le premier enregistrement, et s'arrête");
+    $message->set("La définition des colonnes est décrite dans le fichier param.ini, dans la section csv");
     $message->set("Les fichiers à traiter doivent être déposés dans le dossier import");
     $message->set("Une fois traités, les fichiers sont déplacés dans le dossier treated");
     $eot = true;
@@ -90,7 +90,6 @@ if (!$eot) {
             $eot = true;
         }
     }
-
     /**
      * Connexion à la base de données et initialisation de la table
      */
@@ -144,7 +143,6 @@ if (!$eot) {
     } catch (Exception $e) {
         $message->set("Le dossier " . $param["general"]["source"] . " n'existe pas");
     }
-
     if (count($files) > 0) {
         /**
          * Declenchement de la lecture
@@ -154,47 +152,36 @@ if (!$eot) {
         foreach ($files as $file) {
             try {
                 $import->initFile($param["general"]["source"] . "/" . $file, $param["general"]["separator"]);
-                /**
-                 * Get the structure of the file
-                 */
-                $structure = $import->getStructure(2, $param["general"]["headerSeparator"], $param["general"]["unitFieldNumber"]);
+                $structure = $import->getStructureCsv($param["general"]["headerLine"], $param["general"]["separator"], $param["csv"]);
                 if ($param["general"]["mode"] == "debug") {
                     echo "Structure:" . PHP_EOL;
                     printr($structure);
-                    echo "param[fields]:" . PHP_EOL;
-                    printr($param["fields"]);
+                    echo "param[csv]:" . PHP_EOL;
+                    printr($param["csv"]);
                 }
-                $data = $import->getContent($structure["numline"]);
+                $data = $import->getContent($param["general"]["numline"]);
                 $import->fileClose();
                 $pdo->beginTransaction();
-                $numline = $structure["numline"];
+                $numline = $param["general"]["numline"];
                 foreach ($data as $row) {
                     if (strlen($row[0]) > 0) {
                         $newitem = array(
                             $param["table"]["measure_id"] => 0,
                             $param["table"]["station"] => $param["stations"][$param["general"]["station"]]
                         );
+                        $ldate = $row[$param["table"]["datefield"]];
+                        if (strlen($ldate) == 16) {
+                            $ldate = $ldate . ":00";
+                        }
+                        $newitem[$param["table"]["date"]] = $ldate;
                         /**
-                         * Extract all data from the current row
+                         * Extract the data of the row
                          */
-                        foreach ($structure["fields"] as $fieldname => $fieldnumber) {
-                            if ($row[$fieldnumber] >= 0) {
-                                $newitem[$param["fields"][$fieldname]] = $row[$fieldnumber];
+                        foreach ($structure as $key => $fieldname) {
+                            if ($row[$key] > 0) {
+                                $newitem[$fieldname] = $row[$key];
                             }
                         }
-                        /**
-                         * Reformate the date
-                         */
-                        $ldate = $row[$param["table"]["datefield"]];
-                        if (strlen($ldate) == 11) {
-                            $ldate = "0" . $ldate;
-                        }
-                        $newitem[$param["table"]["date"]] = substr($ldate, 0, 2) . "/"
-                            . substr($ldate, 2, 2) . "/20"
-                            . substr($ldate, 4, 2) . " "
-                            . substr($ldate, 6, 2) . ":"
-                            . substr($ldate, 8, 2) . ":"
-                            . substr($ldate, 10, 2);
                         if ($param["general"]["mode"] == "debug") {
                             echo "Data in file:" . PHP_EOL;
                             printr($row);
@@ -228,7 +215,6 @@ if (!$eot) {
         $message->set("Pas de fichiers à traiter dans le dossier " . $param["general"]["folder"]);
     }
 }
-
 /**
  * Display messages
  */

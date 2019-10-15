@@ -49,7 +49,8 @@ class Import
      * @param string $separator
      * @return string
      */
-    private function normalizeSeparator($separator) {
+    private function normalizeSeparator($separator)
+    {
         if ($separator == "tab" || $separator == "t") {
             $separator = "\t";
         }
@@ -66,7 +67,7 @@ class Import
      * @param integer $headerLine: first line to be reading to get the structure
      * @return array: fields: list of positions of values, numline: number of the first line with data
      */
-    function getStructure($firstLine = 2, $separator=",", $unitFieldNumber=2)
+    function getStructure($firstLine = 2, $separator = ",", $unitFieldNumber = 2)
     {
         $firstChar = "V";
         $numline = 1;
@@ -88,7 +89,7 @@ class Import
                  * Extract the first field if separator is not a tab
                  */
                 if ($separator != "\t") {
-                    $row = explode("\t",$row)[0];
+                    $row = explode("\t", $row)[0];
                 }
                 $fields = explode($separator, $row);
                 $radical = substr($fields[1], 0, 4);
@@ -96,7 +97,7 @@ class Import
                     /**
                      * Extract the unit and remove end of line
                      */
-                    $unit = str_replace("\r",'', utf8_encode($fields[$unitFieldNumber]));
+                    $unit = str_replace("\r", '', utf8_encode($fields[$unitFieldNumber]));
                     $unit = str_replace("\n", '', $unit);
 
                     /**
@@ -119,6 +120,37 @@ class Import
         $structure["numline"] = $numline - 1;
         return $structure;
     }
+    /**
+     * Get the composition of a csvfile
+     *
+     * @param integer $headerLine: number of the line of header
+     * @param array $csvHeaders: list of recognized columns
+     * @return array
+     */
+    function getStructureCSV(int $headerLine, $separator, array $csvHeaders)
+    {
+        $separator = $this->normalizeSeparator($separator);
+        /**
+         * Positionnement après la ligne d'entete
+         */
+        for ($i = 1; $i < $headerLine; $i++) {
+            fgets($this->handle);
+        }
+        $row = fgets($this->handle);
+        $headers = array();
+        $fields = explode($this->separator, $row);
+        $col = 0;
+        foreach ($fields as $field) {
+            $field = trim($field);
+            if (isset($csvHeaders[$field])) {
+                $headers[$col] = $csvHeaders[$field];
+            }
+            $col++;
+        }
+        rewind($this->handle);
+        return $headers;
+    }
+
     /**
      * Get the content of data of the file
      *
