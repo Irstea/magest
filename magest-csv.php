@@ -58,7 +58,11 @@ if ($argv[1] == "-h" || $argv[1] == "--help") {
     $params = array();
     for ($i = 1; $i <= count($argv); $i++) {
         $arg = explode("=", $argv[$i]);
-        $params[$arg[0]] = $arg[1];
+        $params[substr($arg[0], 2)] = $arg[1];
+    }
+    if ($params["mode"] == "debug") {
+        echo "Paramètres en entrée:" . PHP_EOL;
+        printr($params);
     }
 }
 if (!$eot) {
@@ -67,7 +71,7 @@ if (!$eot) {
     }
     /**
      * Recuperation des parametres depuis le fichier param.ini
-     * 
+     *
      */
     if (!file_exists($params["param"])) {
         $message->set("Le fichier de paramètres " . $params["param"] . " n'existe pas");
@@ -75,14 +79,14 @@ if (!$eot) {
     } else {
         $param = parse_ini_file($params["param"], true);
         foreach ($params as $key => $value) {
-            $param["general"][substr($key, 2)] = $value;
+            $param["general"][$key] = $value;
         }
         /**
          * Recuperation de la station
          */
         if (strlen($param["general"]["station"]) > 0) {
             if (!isset($param["stations"][$param["general"]["station"]])) {
-                $message->set("La station n'existe pas dans le fichier param.ini: " . $param["general"]["station"]);
+                $message->set("La station n'existe pas dans le fichier de paramètres (" . $params["param"] . ") : " . $param["general"]["station"]);
                 $eot = true;
             }
         } else {
@@ -148,6 +152,8 @@ if (!$eot) {
          * Declenchement de la lecture
          */
         $import = new Import();
+        $idMin = 99999999;
+        $idMax = 0;
 
         foreach ($files as $file) {
             try {
@@ -178,7 +184,7 @@ if (!$eot) {
                          * Extract the data of the row
                          */
                         foreach ($structure as $key => $fieldname) {
-                            if ($row[$key] > 0) {
+                            if ($row[$key] != -9999 && !empty($row[$key])) {
                                 $newitem[$fieldname] = $row[$key];
                             }
                         }
@@ -192,7 +198,11 @@ if (!$eot) {
                         /**
                          * Write data in table
                          */
-                        $measure->ecrire($newitem);
+                        $id = $measure->ecrire($newitem);
+                        if ($id < $idMin) {
+                            $idMin = $id;
+                        }
+                        $idMax = $id;
                     }
                     $numline++;
                 }
@@ -210,6 +220,8 @@ if (!$eot) {
                 $message->set("Ligne potentiellement en erreur : " . $numline);
                 $message->set($e->getMessage());
             }
+            $message->set("Premier identifiant généré : " . $idMin);
+            $message->set("Dernier identifiant généré : " . $idMax);
         }
     } else {
         $message->set("Pas de fichiers à traiter dans le dossier " . $param["general"]["folder"]);
