@@ -1,8 +1,8 @@
 <?php
 
 /**
- * Realisation : Eric Quinton - mai 2019
- * Copyright © Irstea 2019
+ * Realisation : Eric Quinton - juillet 2021
+ * Copyright © INRAE 2021
  */
 
 error_reporting(E_ERROR);
@@ -23,7 +23,7 @@ $eot = false;
  * Options par defaut
  */
 $message->set("Magest : importation des données MAGEST");
-$message->set("Licence : MIT. Copyright © 2019 - Éric Quinton, pour Irstea - EABX - Cestas");
+$message->set("Licence : MIT. Copyright © 2019-2021 - Éric Quinton, pour INRAE - EABX - Cestas");
 /**
  * Traitement des options de la ligne de commande
  */
@@ -44,11 +44,15 @@ if ($argv[1] == "-h" || $argv[1] == "--help") {
     $message->set('--separator=space : séparateur de champ (, ; tab ou space)');
     $message->set("--headerLine=1 : n° de la ligne d'entête");
     $message->set("--numline=2 : première ligne à traiter");
+    $message->set("--datefield=0 : numéro de la colonne contenant la date (la première colonne a le numéro 0)");
     $message->set("--noMove=1 : pas de déplacement des fichiers une fois traités");
     $message->set("--mode=debug : affiche les paramètres analysés pour le premier fichier et le tableau des données pour le premier enregistrement, et s'arrête");
     $message->set("La définition des colonnes est décrite dans le fichier param.ini, dans la section csv");
     $message->set("Les fichiers à traiter doivent être déposés dans le dossier import");
     $message->set("Une fois traités, les fichiers sont déplacés dans le dossier treated");
+    $message->set("");
+    $message->set("Exemple d'utilisation : ");
+    $message->set('php magest-csv.php --param=param2021.ini --source=import --treated=treated --separator=";" --numline=3 --station=branne');
     $eot = true;
 } else {
     /**
@@ -154,7 +158,7 @@ if (!$eot) {
         $import = new Import();
         $idMin = 99999999;
         $idMax = 0;
-
+        $nblignesTrans = 0;
         foreach ($files as $file) {
             try {
                 $import->initFile($param["general"]["source"] . "/" . $file, $param["general"]["separator"]);
@@ -175,11 +179,18 @@ if (!$eot) {
                             $param["table"]["measure_id"] => 0,
                             $param["table"]["station"] => $param["stations"][$param["general"]["station"]]
                         );
-                        $ldate = $row[$param["table"]["datefield"]];
+                        $ldate = $row[$param["general"]["datefield"]];
                         if (strlen($ldate) == 16) {
                             $ldate = $ldate . ":00";
                         }
                         $newitem[$param["table"]["date"]] = $ldate;
+                        /**
+                         * Search the id if exists
+                         */
+                        $id = $measure->getId($ldate, $newitem[$param["table"]["station"]],$param["table"]["date"], $param["table"]["station"],$param["table"]["measure_id"] );
+                        if ($id > 0) {
+                            $newitem[$param["table"]["measure_id"]] = $id;
+                        }
                         /**
                          * Extract the data of the row
                          */
@@ -205,6 +216,12 @@ if (!$eot) {
                         $idMax = $id;
                     }
                     $numline++;
+                    $nblignesTrans ++;
+                    if ($nblignesTrans > 1000) {
+                        $pdo->commit();
+                        $nblignesTrans = 0;
+                        $pdo->beginTransaction();
+                    }
                 }
                 /**
                  * Deplacement du fichier

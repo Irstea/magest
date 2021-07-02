@@ -1,7 +1,7 @@
 <?php
 
 /**
- * 
+ *
  * Realisation : Eric Quinton - mai 2019
  * Copyright © Irstea 2019
  */
@@ -67,7 +67,7 @@ if (!$eot) {
     }
     /**
      * Recuperation des parametres depuis le fichier param.ini
-     * 
+     *
      */
     if (!file_exists($params["param"])) {
         $message->set("Le fichier de paramètres " . $params["param"] . " n'existe pas");
@@ -185,7 +185,7 @@ if (!$eot) {
                         /**
                          * Reformate the date
                          */
-                        $ldate = $row[$param["table"]["datefield"]];
+                        $ldate = $row[$param["general"]["datefield"]];
                         if (strlen($ldate) == 11) {
                             $ldate = "0" . $ldate;
                         }
